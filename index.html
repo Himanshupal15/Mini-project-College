@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Classroom & Timetable Scheduler</title>
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-gray-50 font-sans">
+
+  <!-- Navbar -->
+  <nav class="bg-[var(--primary)] text-white p-4 flex justify-between items-center shadow-lg border-b border-[var(--primary-light)]">
+    <h1 class="text-xl font-bold tracking-wide">📚 Smart Classroom and Timetable Scheduler</h1>
+    <button onclick="showLogin()" class="bg-white text-[var(--primary)] px-4 py-2 rounded hover:bg-[var(--primary-bg)] transition-colors duration-300 font-medium shadow-sm">Logout</button>
+  </nav>
+
+  <!-- Login Section -->
+  <section id="login-section" class="flex flex-col items-center justify-center min-h-screen bg-gradient-to-r from-[var(--primary)] via-[var(--primary-light)] to-[var(--secondary)]">
+    <div class="login-box">
+      <h2 class="text-3xl mb-6 font-bold text-[var(--primary)]">Login Panel</h2>
+    <div id="login-error" class="text-red-500 mb-4 hidden"></div>
+    <select id="user-type" class="form-control mb-4 w-64 text-[var(--text-primary)]">
+      <option value="student">Student</option>
+      <option value="teacher">Teacher</option>
+      <option value="admin">Admin</option>
+    </select>
+    <div class="relative mb-4">
+      <input id="username" class="w-64 p-2 pl-10 border rounded-lg focus:outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary-bg)] transition-all duration-300" 
+        type="text" placeholder="Username">
+      <span class="absolute left-3 top-2.5 text-[var(--primary)]">👤</span>
+    </div>
+    <div class="relative mb-4">
+      <input id="password" class="w-64 p-2 pl-10 border rounded-lg focus:outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary-bg)] transition-all duration-300" 
+        type="password" placeholder="Password">
+      <span class="absolute left-3 top-2.5 text-[var(--primary)]">🔒</span>
+    </div>
+    <div class="flex items-center mb-6">
+      <input type="checkbox" id="remember-me" class="mr-2 h-4 w-4 rounded border-gray-300 text-[var(--primary)] focus:ring-[var(--primary)]">
+      <label for="remember-me" class="text-[var(--text-primary)]">Remember me</label>
+    </div>
+    <button onclick="handleLogin()" 
+      class="bg-[var(--primary)] text-white px-8 py-3 rounded-lg hover:bg-[var(--primary-dark)] transition-all duration-300 flex items-center justify-center shadow-lg hover:shadow-xl w-64">
+      <span class="mr-2">Login</span>
+      <span class="transform transition-transform group-hover:translate-x-1">→</span>
+    </button>
+  </section>
+  <div id="notification" class="fixed top-4 right-4 bg-[var(--primary)] text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 hidden flex items-center border border-[var(--primary-light)]">
+    <span class="mr-2">✨</span>
+    <span>Update Saved!</span>
+  </div>
+
+  <!-- Admin Dashboard Section -->
+  <section id="admin-dashboard" class="hidden p-6 max-w-6xl mx-auto">
+    <h2 class="text-3xl font-bold mb-6 text-purple-600">Admin Dashboard</h2>
+
+    <!-- User Management -->
+    <div class="bg-white rounded-xl shadow-md p-6 mb-8 hover:shadow-lg transition-shadow duration-300">
+      <h3 class="text-2xl font-bold mb-4 text-purple-600 flex items-center">
+        <span class="mr-2">👥</span>
+        User Management
+      </h3>
+      <div id="add-user-panel" class="mb-4 hidden">
+        <h4 class="font-bold mb-2">Add New User</h4>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
+          <input id="new-user-name" type="text" placeholder="Username" class="border p-2 rounded-lg focus:outline-none focus:border-purple-500">
+          <select id="new-user-type" class="border p-2 rounded-lg focus:outline-none focus:border-purple-500">
+            <option value="student">Student</option>
+            <option value="teacher">Teacher</option>
+          </select>
+          <input id="new-user-password" type="password" placeholder="Password (min 6)" class="border p-2 rounded-lg focus:outline-none focus:border-purple-500">
+          <input id="new-user-email" type="email" placeholder="Email" class="border p-2 rounded-lg focus:outline-none focus:border-purple-500">
+          <button id="add-user-btn" onclick="addUser()" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors duration-300">Add User</button>
+        </div>
+      </div>
+      <div id="users-list" class="mt-4">
+        <!-- Users will be listed here -->
+      </div>
+    </div>
+
+    <!-- System Settings -->
+    <div class="bg-white rounded-xl shadow-md p-6 mb-8 hover:shadow-lg transition-shadow duration-300">
+      <h3 class="text-2xl font-bold mb-4 text-purple-600 flex items-center">
+        <span class="mr-2">⚙️</span>
+        System Settings
+      </h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <h4 class="font-bold mb-2">Academic Year</h4>
+          <input type="text" id="academic-year" class="border p-2 rounded-lg focus:outline-none focus:border-purple-500" placeholder="2025-2026">
+        </div>
+        <div>
+          <h4 class="font-bold mb-2">Current Semester</h4>
+          <select id="current-semester" class="border p-2 rounded-lg focus:outline-none focus:border-purple-500 w-full">
+            <option>Fall Semester</option>
+            <option>Spring Semester</option>
+            <option>Summer Term</option>
+          </select>
+        </div>
+      </div>
+      <button onclick="saveSettings()" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors duration-300 mt-4">Save Settings</button>
+    </div>
+
+    <!-- Analytics Dashboard -->
+    <div class="bg-white rounded-xl shadow-md p-6 mb-8 hover:shadow-lg transition-shadow duration-300">
+      <h3 class="text-2xl font-bold mb-4 text-purple-600 flex items-center">
+        <span class="mr-2">📊</span>
+        Analytics
+      </h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="p-4 border rounded-lg hover:border-purple-500 transition-colors duration-300">
+          <h4 class="font-bold">Total Users</h4>
+          <p class="text-2xl font-bold text-purple-600" id="total-users">0</p>
+        </div>
+        <div class="p-4 border rounded-lg hover:border-purple-500 transition-colors duration-300">
+          <h4 class="font-bold">Active Classes</h4>
+          <p class="text-2xl font-bold text-purple-600" id="active-classes">0</p>
+        </div>
+        <div class="p-4 border rounded-lg hover:border-purple-500 transition-colors duration-300">
+          <h4 class="font-bold">Resource Usage</h4>
+          <p class="text-2xl font-bold text-purple-600" id="resource-usage">0%</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Maintenance Tools -->
+    <div class="bg-white rounded-xl shadow-md p-6 mb-8 hover:shadow-lg transition-shadow duration-300">
+      <h3 class="text-2xl font-bold mb-4 text-purple-600 flex items-center">
+        <span class="mr-2">🛠️</span>
+        System Maintenance
+      </h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <button onclick="backupSystem()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors duration-300 flex items-center justify-center">
+          <span class="mr-2">💾</span>
+          Backup System Data
+        </button>
+        <button onclick="clearCache()" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition-colors duration-300 flex items-center justify-center">
+          <span class="mr-2">🗑️</span>
+          Clear System Cache
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Dashboard Section -->
+  <section id="dashboard-section" class="hidden p-6 max-w-6xl mx-auto">
+    <h2 class="text-3xl font-bold mb-6 text-purple-600">Dashboard</h2>
+    <div class="bg-white rounded-xl shadow-md p-6 mb-8 hover:shadow-lg transition-shadow duration-300">
+      <h3 class="text-2xl font-bold mb-4 text-purple-600 flex items-center">
+        <span class="mr-2">💬</span>
+        Teacher–Student Chat
+      </h3>
+      <div id="chat-box" class="border h-40 overflow-y-auto p-2 mb-2 bg-gray-50 rounded-lg"></div>
+      <div class="flex gap-2">
+        <input id="chat-input" type="text" placeholder="Type message..." class="border p-2 rounded-lg focus:outline-none focus:border-purple-500 flex-grow">
+        <button onclick="sendMessage()" class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors duration-300 flex items-center">
+          <span class="mr-2">Send</span>
+          <span>📨</span>
+        </button>
+      </div>
+    </div>
+    <!-- Assignments Section -->
+    <div id="assignments-section" class="bg-white rounded-xl shadow-md p-6 mb-8 hover:shadow-lg transition-shadow duration-300">
+      <h3 class="text-2xl font-bold mb-4 text-purple-600 flex items-center">
+        <span class="mr-2">📝</span>
+        Assignments
+      </h3>
+      <div id="assignments-container">
+        <!-- assignments.js will render UI here -->
+      </div>
+    </div>
+<!-- Poll / Voting System -->
+<div class="bg-white rounded-xl shadow-md p-6 mb-8 hover:shadow-lg transition-shadow duration-300">
+  <h3 class="text-2xl font-bold mb-4 text-purple-600 flex items-center">
+    <span class="mr-2">📊</span>
+    Quick Poll
+  </h3>
+
+  <!-- Poll Question & Options -->
+  <div id="poll-question-container" class="bg-purple-50 p-4 rounded-lg">
+    <p id="poll-question" class="mb-4 font-semibold text-purple-800">Which feature should we prioritize next?</p>
+    <div id="poll-options" class="space-y-2">
+      <!-- Buttons dynamically generated here -->
+    </div>
+    <div class="mt-4">
+      <h4 class="font-bold text-purple-700">Current Votes:</h4>
+      <ul class="list-disc ml-6 text-purple-600" id="poll-results"></ul>
+    </div>
+  </div>
+
+  <!-- Create New Poll -->
+  <div id="poll-create" class="mt-6 bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-lg">
+    <h4 class="font-bold mb-2 text-purple-700">Create New Poll</h4>
+    <input id="new-question" type="text" placeholder="Enter new question" class="border p-2 rounded-lg w-full mb-2 focus:outline-none focus:border-purple-500">
+    <textarea id="new-options" placeholder="Enter options separated by commas" class="border p-2 rounded-lg w-full mb-4 focus:outline-none focus:border-purple-500 h-24"></textarea>
+    <button onclick="createPoll()" class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors duration-300 flex items-center">
+      <span class="mr-2">Create Poll</span>
+      <span>✨</span>
+    </button>
+  </div>
+</div>
+
+
+    <!-- Attendance Management -->
+    <div id="attendance-section" class="bg-white rounded-xl shadow-md p-6 mb-8 hover:shadow-lg transition-shadow duration-300">
+      <h3 class="text-2xl font-bold mb-4 text-purple-600 flex items-center">
+        <span class="mr-2">📋</span>
+        Attendance Management
+      </h3>
+
+      <!-- Teacher Controls -->
+      <div class="teacher-controls mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-4">
+          <div class="md:col-span-2">
+            <label for="subject-select" class="text-sm text-gray-600 mb-1 block">Select Subject *</label>
+            <select id="subject-select" class="border p-2 rounded-lg w-full focus:outline-none focus:border-purple-500">
+              <option value="">Choose a subject</option>
+              <!-- Subjects loaded dynamically -->
+            </select>
+          </div>
+          <div class="relative">
+            <label for="attendance-date" class="text-sm text-gray-600 mb-1 block">Date *</label>
+            <input type="date" id="attendance-date" class="border p-2 rounded-lg w-full focus:outline-none focus:border-purple-500">
+          </div>
+          <div>
+            <button onclick="loadAttendanceSheet()" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors duration-300 flex items-center justify-center w-full">
+              <span class="mr-2">📝</span>
+              Load Sheet
+            </button>
+          </div>
+        </div>
+
+        <!-- Student Add Form -->
+        <div id="attendance-controls" class="bg-purple-50 p-4 rounded-lg mb-4 flex gap-4 items-end">
+          <div class="flex-grow">
+            <label for="student-name" class="text-sm text-gray-600 mb-1 block">Add New Student</label>
+            <div class="relative">
+              <input id="student-name" type="text" placeholder="Enter student name" 
+                class="border p-2 pl-10 rounded-lg w-full focus:outline-none focus:border-purple-500">
+              <span class="absolute left-3 top-[38px] text-gray-400">👤</span>
+            </div>
+          </div>
+          <button onclick="addStudent()" class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors duration-300 flex items-center h-[42px]">
+            <span class="mr-2">Add</span>
+            <span>+</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Attendance Sheet -->
+      <div class="overflow-x-auto">
+        <table class="w-full border-collapse mb-4">
+          <thead>
+            <tr class="bg-purple-100">
+              <th class="border-b-2 border-purple-200 px-4 py-2 text-left text-purple-700">Student Name</th>
+              <th class="border-b-2 border-purple-200 px-4 py-2 text-center text-purple-700">Present</th>
+              <th class="border-b-2 border-purple-200 px-4 py-2 text-center text-purple-700">Absent</th>
+              <th class="border-b-2 border-purple-200 px-4 py-2 text-center text-purple-700">Status</th>
+            </tr>
+          </thead>
+          <tbody id="attendance-body">
+            <!-- Rows added dynamically -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex justify-between items-center mt-4">
+        <div class="text-sm text-gray-600">
+          <span class="font-bold">Total Present:</span> <span id="total-present">0</span> |
+          <span class="font-bold">Total Absent:</span> <span id="total-absent">0</span>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="AI.showAttendanceWarnings()" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition-colors duration-300 flex items-center">
+            <span class="mr-2">⚠️</span>
+            Check Warnings
+          </button>
+          <button onclick="saveAttendance()" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors duration-300 flex items-center">
+            <span class="mr-2">Save</span>
+            <span>✓</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Timetable Scheduler -->
+    <div id="timetable-section" class="bg-white rounded-xl shadow-md p-6 mb-8 hover:shadow-lg transition-shadow duration-300">
+      <h3 class="text-2xl font-bold mb-4 text-purple-600 flex items-center">
+        <span class="mr-2">📅</span>
+        Timetable Scheduler
+      </h3>
+      <div class="overflow-x-auto mb-4">
+        <table id="timetable" class="table-auto border-collapse border border-purple-200 w-full">
+          <thead class="bg-purple-100">
+            <tr>
+              <th class="border border-purple-200 p-3 text-purple-700">Time</th>
+              <th class="border border-purple-200 p-3 text-purple-700">Monday</th>
+              <th class="border border-purple-200 p-3 text-purple-700">Tuesday</th>
+              <th class="border border-purple-200 p-3 text-purple-700">Wednesday</th>
+              <th class="border border-purple-200 p-3 text-purple-700">Thursday</th>
+              <th class="border border-purple-200 p-3 text-purple-700">Friday</th>
+            </tr>
+          </thead>
+          <tbody id="timetable-body">
+            <tr>
+              <td class="border border-purple-200 p-3">9:00</td>
+              <td class="border border-purple-200 p-3 hover:bg-purple-50">Math</td>
+              <td class="border border-purple-200 p-3 hover:bg-purple-50">English</td>
+              <td class="border border-purple-200 p-3 hover:bg-purple-50">Physics</td>
+              <td class="border border-purple-200 p-3 hover:bg-purple-50">Chemistry</td>
+              <td class="border border-purple-200 p-3 hover:bg-purple-50">Free</td>
+            </tr>
+            <tr>
+              <td class="border border-purple-200 p-3">10:00</td>
+              <td class="border border-purple-200 p-3 hover:bg-purple-50">Physics</td>
+              <td class="border border-purple-200 p-3 hover:bg-purple-50">Math</td>
+              <td class="border border-purple-200 p-3 hover:bg-purple-50">Chemistry</td>
+              <td class="border border-purple-200 p-3 hover:bg-purple-50">English</td>
+              <td class="border border-purple-200 p-3 hover:bg-purple-50">Free</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Add New Class Slot -->
+  <div id="timetable-edit" class="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-lg">
+        <h4 class="font-bold mb-4 text-purple-700 flex items-center">
+          <span class="mr-2">➕</span>
+          Add New Class Slot
+        </h4>
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div class="relative">
+            <input id="time-input" type="text" placeholder="Time (e.g. 11:00)" class="border p-2 pl-10 rounded-lg w-full focus:outline-none focus:border-purple-500">
+            <span class="absolute left-3 top-2.5 text-gray-400">🕐</span>
+          </div>
+          <select id="day-input" class="border p-2 rounded-lg focus:outline-none focus:border-purple-500">
+            <option>Monday</option><option>Tuesday</option><option>Wednesday</option>
+            <option>Thursday</option><option>Friday</option>
+          </select>
+          <div class="relative">
+            <input id="subject-input" type="text" placeholder="Subject" class="border p-2 pl-10 rounded-lg w-full focus:outline-none focus:border-purple-500">
+            <span class="absolute left-3 top-2.5 text-gray-400">📚</span>
+          </div>
+          <button onclick="addClass()" class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors duration-300 flex items-center justify-center">
+            <span class="mr-2">Add Class</span>
+            <span>✨</span>
+          </button>
+        </div>
+        <p class="text-sm text-purple-600 mt-4 flex items-center">
+          <span class="mr-2">ℹ️</span>
+          Enter time in 24-hour format (e.g. 09:00, 14:30)
+        </p>
+      </div>
+    </div>
+
+    <!-- Subjects Management -->
+    <div id="subjects-section" class="bg-white rounded-xl shadow-md p-6 mb-8 hover:shadow-lg transition-shadow duration-300">
+      <h3 class="text-2xl font-bold mb-4 text-[var(--primary)] flex items-center">
+        <span class="mr-2">📚</span>
+        Subjects Management
+      </h3>
+      <div class="subjects-form">
+        <!-- Form will be rendered here by subjects.js -->
+      </div>
+      <div class="subjects-list mt-6">
+        <!-- Subject list will be rendered here by subjects.js -->
+      </div>
+    </div>
+
+    <!-- AI Timetable Generation -->
+    <div id="ai-timetable" class="bg-white rounded-xl shadow-md p-6 mb-8 hover:shadow-lg transition-shadow duration-300">
+      <h3 class="text-2xl font-bold mb-4 text-purple-600 flex items-center">
+        <span class="mr-2">🤖</span>
+        AI Timetable Generator
+      </h3>
+      <div class="space-y-4">
+        <div class="flex items-center space-x-4">
+          <button onclick="generateAITimetable()" class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors duration-300 flex items-center">
+            <span class="mr-2">Generate Smart Timetable</span>
+            <span>✨</span>
+          </button>
+          <button onclick="AI.showAttendanceWarnings()" class="bg-yellow-600 text-white px-6 py-2 rounded-lg hover:bg-yellow-700 transition-colors duration-300 flex items-center">
+            <span class="mr-2">Check Attendance Warnings</span>
+            <span>⚠️</span>
+          </button>
+        </div>
+        <p class="text-sm text-purple-600">
+          AI will generate a balanced timetable based on subjects and show warnings for students with low attendance.
+        </p>
+      </div>
+    </div>
+
+    <!-- Smart Classroom Resources -->
+    <div class="bg-white rounded-xl shadow-md p-6 mb-8 hover:shadow-lg transition-shadow duration-300">
+      <h3 class="text-2xl font-bold mb-4 text-purple-600 flex items-center">
+        <span class="mr-2">🎯</span>
+        Smart Classroom Resources
+      </h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="p-6 border rounded-lg hover:border-purple-500 transition-all duration-300 bg-gradient-to-br from-white to-purple-50">
+          <h4 class="font-bold flex items-center text-lg mb-3">
+            <span class="mr-2">📽️</span>
+            Projector
+          </h4>
+          <p class="mb-3">Status: <span id="projector-status" class="text-green-600 font-semibold">Available</span></p>
+          <button onclick="toggleResource('projector-status')" class="w-full bg-purple-100 text-purple-700 px-4 py-2 rounded-lg hover:bg-purple-200 transition-colors duration-300 flex items-center justify-center">
+            <span class="mr-2">Toggle Status</span>
+            <span>🔄</span>
+          </button>
+        </div>
+        <div class="p-6 border rounded-lg hover:border-purple-500 transition-all duration-300 bg-gradient-to-br from-white to-purple-50">
+          <h4 class="font-bold flex items-center text-lg mb-3">
+            <span class="mr-2">🖥️</span>
+            Smart Board
+          </h4>
+          <p class="mb-3">Status: <span id="smartboard-status" class="text-red-600 font-semibold">In Use</span></p>
+          <button onclick="toggleResource('smartboard-status')" class="w-full bg-purple-100 text-purple-700 px-4 py-2 rounded-lg hover:bg-purple-200 transition-colors duration-300 flex items-center justify-center">
+            <span class="mr-2">Toggle Status</span>
+            <span>🔄</span>
+          </button>
+        </div>
+        <div class="p-6 border rounded-lg hover:border-purple-500 transition-all duration-300 bg-gradient-to-br from-white to-purple-50">
+          <h4 class="font-bold flex items-center text-lg mb-3">
+            <span class="mr-2">📶</span>
+            Wi-Fi
+          </h4>
+          <p class="mb-3">Status: <span id="wifi-status" class="text-green-600 font-semibold">Online</span></p>
+          <button onclick="toggleResource('wifi-status')" class="w-full bg-purple-100 text-purple-700 px-4 py-2 rounded-lg hover:bg-purple-200 transition-colors duration-300 flex items-center justify-center">
+            <span class="mr-2">Toggle Status</span>
+            <span>🔄</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Announcements -->
+    <div class="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow duration-300">
+      <h3 class="text-2xl font-bold mb-4 text-purple-600 flex items-center">
+        <span class="mr-2">📢</span>
+        Announcements
+      </h3>
+      <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg mb-4">
+        <ul class="space-y-3" id="announcements">
+          <li class="flex items-start">
+            <span class="text-purple-500 mr-2">📍</span>
+            <span>Tomorrow's physics class moved to Room 201.</span>
+          </li>
+          <li class="flex items-start">
+            <span class="text-purple-500 mr-2">🔧</span>
+            <span>Projector maintenance on Wednesday 2 PM.</span>
+          </li>
+          <li class="flex items-start">
+            <span class="text-purple-500 mr-2">🔄</span>
+            <span>New timetable updates will be pushed automatically.</span>
+          </li>
+        </ul>
+      </div>
+      <div class="flex gap-2">
+          <div id="announcement-controls" class="relative flex-grow">
+          <input id="announcement-input" type="text" placeholder="Add new announcement" class="border p-2 pl-10 rounded-lg w-full focus:outline-none focus:border-purple-500">
+          <span class="absolute left-3 top-2.5 text-gray-400">📢</span>
+        </div>
+        <button onclick="addAnnouncement()" class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors duration-300 flex items-center">
+          <span class="mr-2">Add</span>
+          <span>+</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- JavaScript -->
+  <!-- Load client-side datastore (localStorage) -->
+  <script src="js/datastore.js"></script>
+  <!-- Load utilities and feature scripts -->
+  <script src="js/utils.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/assignments.js"></script>
+  <script src="js/attendance.js"></script>
+  <script src="js/admin.js"></script>
+  <script src="js/calendar.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/timetable.js"></script>
+  <script src="js/subjects.js"></script>
+  <script src="js/ai.js"></script>
+  <script>
+    // Ensure there is at least one admin account. Do NOT clear user's data automatically.
+    (async function ensureAdminExists() {
+      try {
+        const existing = Datastore.getUsers(u => u.type === 'admin');
+        if (existing && existing.length > 0) {
+          console.log('Admin user(s) already exist; skipping auto-create.');
+          return;
+        }
+
+        // Create a default admin only when no admins are present
+        const password = 'admin123';
+        const passwordHash = await hashPassword(password);
+
+        Datastore.createUser({
+          username: 'admin',
+          type: 'admin',
+          email: 'admin@school.com',
+          name: 'Administrator',
+          passwordHash: passwordHash
+        });
+        console.log('Created default admin account - Username: admin, Password: admin123');
+      } catch (e) {
+        console.error('Failed to ensure admin exists:', e);
+      }
+    })();
+  </script>
+  <script>
+    // Polling (kept inline since it's small)
+    let pollQuestion = "Which feature should we prioritize next?";
+    let pollOptions = ["AI Timetable Generation", "Attendance Analytics", "Resource Booking System"];
+    let votes = {};
+
+    function initPoll() {
+      votes = {};
+      pollOptions.forEach(opt => votes[opt] = 0);
+      document.getElementById('poll-question').textContent = pollQuestion;
+      const optionsDiv = document.getElementById('poll-options');
+      optionsDiv.innerHTML = "";
+      pollOptions.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.textContent = opt;
+        btn.className = "bg-purple-100 hover:bg-purple-200 w-full text-left px-4 py-2 rounded-lg transition-colors duration-300 flex items-center";
+        btn.innerHTML = `<span class="mr-2">🔘</span>${opt}`;
+        btn.onclick = () => vote(opt);
+        optionsDiv.appendChild(btn);
+      });
+      displayVotes();
+    }
+
+    function vote(option) {
+      votes[option]++;
+      displayVotes();
+    }
+
+    function displayVotes() {
+      const results = document.getElementById('poll-results');
+      results.innerHTML = "";
+      for (const key in votes) {
+        const li = document.createElement('li');
+        li.textContent = `${key}: ${votes[key]} vote(s)`;
+        results.appendChild(li);
+      }
+    }
+
+    function createPoll() {
+      // Only teachers and admins may create polls; students can only vote
+      if (!checkPermission('teacher')) {
+        showNotification("Only teachers and admins can create polls!");
+        return;
+      }
+      const question = document.getElementById('new-question').value.trim();
+      const optionsText = document.getElementById('new-options').value.trim();
+      if (question && optionsText) {
+        pollQuestion = question;
+        pollOptions = optionsText.split(',').map(opt => opt.trim()).filter(opt => opt !== "");
+        initPoll();
+        document.getElementById('new-question').value = "";
+        document.getElementById('new-options').value = "";
+        showNotification("New poll created successfully!");
+      } else {
+        showNotification("Please enter both question and options!");
+      }
+    }
+
+    // Initialize poll on load
+    document.addEventListener('DOMContentLoaded', () => initPoll());
+  </script>
+
+</body>
+</html>

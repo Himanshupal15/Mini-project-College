@@ -1,0 +1,231 @@
+// Attendance Management
+let students = [];
+let attendance = {};
+let currentSubject = null; // Track current subject for attendance
+
+function addStudent() {
+    // Support adding from either the teacher input or the tracker input
+    const teacherInput = document.getElementById('student-name');
+    const trackerInput = document.getElementById('tracker-student-name');
+    // Prefer the input that has a non-empty value
+    let nameValue = '';
+    let source = 'teacher';
+    if (trackerInput && trackerInput.value && trackerInput.value.trim() !== '') {
+        nameValue = trackerInput.value.trim();
+        source = 'tracker';
+    } else if (teacherInput && teacherInput.value && teacherInput.value.trim() !== '') {
+        nameValue = teacherInput.value.trim();
+        source = 'teacher';
+    }
+
+    if (!nameValue) {
+        showNotification('Please enter a student name');
+        return;
+    }
+
+    // Check for duplicate student
+    if (students.includes(nameValue)) {
+        showNotification('Student already exists');
+        // Clear the source input
+        if (source === 'tracker') trackerInput.value = '';
+        else if (teacherInput) teacherInput.value = '';
+        return;
+    }
+
+    students.push(nameValue);
+    attendance[nameValue] = 'Not Marked';
+
+    // Update the teacher attendance table (canonical source)
+    updateAttendanceTable();
+    saveAttendanceData();
+
+    // If added from tracker input, append a simplified row to tracker table as view-only
+    if (source === 'tracker') {
+        const trackerBody = document.getElementById('attendance-tracker-body');
+        if (trackerBody) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="border px-4 py-2">${nameValue}</td>
+                <td class="border px-4 py-2 text-center">-</td>
+                <td class="border px-4 py-2 text-center">-</td>
+                <td class="border px-4 py-2 text-center font-semibold">Not Marked</td>
+            `;
+            trackerBody.appendChild(row);
+        }
+        trackerInput.value = '';
+    } else {
+        if (teacherInput) teacherInput.value = '';
+    }
+}
+
+function updateAttendanceTable() {
+    const attendanceBody = document.getElementById('attendance-body');
+    if (!attendanceBody) return;
+    
+    // Get subjects for dropdown
+    const subjects = safeGetItem('subjects', []);
+    
+    // Add subject selector if teacher or admin
+    const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    if ((user.type === 'teacher' || user.type === 'admin') && subjects.length > 0) {
+        const subjectSelector = document.createElement('div');
+        subjectSelector.className = 'mb-4';
+        subjectSelector.innerHTML = `
+            <select id="attendance-subject" class="border p-2 rounded" onchange="changeSubject(this.value)">
+                <option value="">Select Subject</option>
+                ${subjects.map(s => `
+                    <option value="${s.code}" ${currentSubject === s.code ? 'selected' : ''}>
+                        ${s.name} (${s.code})
+                    </option>
+                `).join('')}
+            </select>
+        `;
+        attendanceBody.parentElement.insertBefore(subjectSelector, attendanceBody);
+    }
+
+    attendanceBody.innerHTML = '';
+    
+    if (!currentSubject) {
+        attendanceBody.innerHTML = '<tr><td colspan="4" class="text-center py-4">Please select a subject first</td></tr>';
+        return;
+    }
+
+    students.forEach(student => {
+        const row = document.createElement('tr');
+        
+        // Name cell
+        const nameCell = document.createElement('td');
+        nameCell.className = "border px-4 py-2";
+        nameCell.textContent = student;
+        
+        // Present button cell
+        const presentCell = document.createElement('td');
+        presentCell.className = "border px-4 py-2 text-center";
+        const presentBtn = document.createElement('button');
+        presentBtn.textContent = "Present";
+        presentBtn.className = "bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded";
+        presentBtn.onclick = () => markAttendance(student, "Present");
+        presentCell.appendChild(presentBtn);
+        
+        // Absent button cell
+        const absentCell = document.createElement('td');
+        absentCell.className = "border px-4 py-2 text-center";
+        const absentBtn = document.createElement('button');
+        absentBtn.textContent = "Absent";
+        absentBtn.className = "bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded";
+        absentBtn.onclick = () => markAttendance(student, "Absent");
+        absentCell.appendChild(absentBtn);
+        
+        // Status cell
+        const statusCell = document.createElement('td');
+        statusCell.className = "border px-4 py-2 text-center font-semibold";
+        statusCell.id = `status-${student}`;
+        statusCell.textContent = attendance[student];
+        
+        row.appendChild(nameCell);
+        row.appendChild(presentCell);
+        row.appendChild(absentCell);
+        row.appendChild(statusCell);
+        attendanceBody.appendChild(row);
+    });
+
+    updateAttendanceSummary();
+}
+
+function markAttendance(student, status) {
+    attendance[student] = status;
+    document.getElementById(`status-${student}`).textContent = status;
+    document.getElementById(`status-${student}`).className = 
+        `border px-4 py-2 text-center font-semibold ${status === 'Present' ? 'text-green-600' : 'text-red-600'}`;
+    
+    updateAttendanceSummary();
+    saveAttendanceData();
+}
+
+function updateAttendanceSummary() {
+    let presentCount = 0;
+    let absentCount = 0;
+
+    for (const student in attendance) {
+        if (attendance[student] === "Present") presentCount++;
+        if (attendance[student] === "Absent") absentCount++;
+    }
+
+    const summary = {
+        total: students.length,
+        present: presentCount,
+        absent: absentCount,
+        notMarked: students.length - (presentCount + absentCount)
+    };
+
+    // Save daily attendance record
+    const today = new Date().toISOString().split('T')[0];
+    const attendanceHistory = JSON.parse(localStorage.getItem('attendanceHistory') || '{}');
+    attendanceHistory[today] = {
+        summary: summary,
+        records: {...attendance}
+    };
+    localStorage.setItem('attendanceHistory', JSON.stringify(attendanceHistory));
+}
+
+function changeSubject(subjectCode) {
+    currentSubject = subjectCode;
+    loadAttendanceData(); // This will reload attendance for the new subject
+}
+
+function saveAttendanceData() {
+    if (!currentSubject) return;
+    
+    const key = `attendance_${currentSubject}`;
+    localStorage.setItem(`students_${currentSubject}`, JSON.stringify(students));
+    localStorage.setItem(key, JSON.stringify(attendance));
+}
+
+function loadAttendanceData() {
+    if (!currentSubject) {
+        students = [];
+        attendance = {};
+        updateAttendanceTable();
+        return;
+    }
+
+    const key = `attendance_${currentSubject}`;
+    const savedStudents = localStorage.getItem(`students_${currentSubject}`);
+    const savedAttendance = localStorage.getItem(key);
+    
+    if (savedStudents && savedAttendance) {
+        students = JSON.parse(savedStudents);
+        attendance = JSON.parse(savedAttendance);
+        updateAttendanceTable();
+    }
+}
+
+function saveAttendance() {
+    const user = JSON.parse(localStorage.getItem('currentUser'));
+    if (user.type !== 'teacher' && user.type !== 'admin') {
+        showNotification('Only teachers can save attendance');
+        return;
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+    const notMarkedStudents = students.filter(student => attendance[student] === 'Not Marked');
+
+    if (notMarkedStudents.length > 0) {
+        if (!confirm('Some students are not marked. Continue anyway?')) {
+            return;
+        }
+    }
+
+    // Reset attendance for next session
+    students.forEach(student => {
+        attendance[student] = 'Not Marked';
+    });
+    updateAttendanceTable();
+    saveAttendanceData();
+    showNotification('Attendance saved successfully!');
+}
+
+// Load attendance data when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    loadAttendanceData();
+});
