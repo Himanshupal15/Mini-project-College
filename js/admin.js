@@ -94,6 +94,7 @@ function loadUsers() {
             <td class="border p-2">${user.type}</td>
             <td class="border p-2">${user.email}</td>
             <td class="border p-2">
+                <button onclick="resetUserPasswordPrompt('${user.id}')" class="btn btn-secondary text-blue-600 hover:text-blue-800 mr-2">Reset Password</button>
                 <button onclick="deleteUser('${user.id}')" class="btn btn-danger text-red-600 hover:text-red-800">Delete</button>
             </td>
         `;
@@ -159,5 +160,43 @@ function clearCache() {
     if (confirm('Are you sure you want to clear the system cache?')) {
         localStorage.removeItem('tempData');
         showNotification('System cache cleared successfully');
+    }
+}
+
+// Prompt admin to set a new password for a user
+async function resetUserPasswordPrompt(userId) {
+    try {
+        const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        if (!currentUser || currentUser.type !== 'admin') {
+            showNotification('Only admins can reset passwords', 'error');
+            return;
+        }
+
+        const user = Datastore.getUserById(userId);
+        if (!user) {
+            showNotification('User not found', 'error');
+            return;
+        }
+
+        const newPassword = prompt(`Enter new password for ${user.username} (${user.type}):`);
+        if (!newPassword) {
+            showNotification('Password reset cancelled');
+            return;
+        }
+        if (newPassword.length < 6) {
+            showNotification('Password must be at least 6 characters long', 'error');
+            return;
+        }
+
+        const hash = await hashPassword(newPassword);
+        const updated = Datastore.updateUser(userId, { passwordHash: hash });
+        if (updated) {
+            showNotification('Password updated successfully');
+        } else {
+            showNotification('Failed to update password', 'error');
+        }
+    } catch (e) {
+        console.error('Reset password error', e);
+        showNotification('Failed to reset password', 'error');
     }
 }

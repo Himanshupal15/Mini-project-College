@@ -14,7 +14,7 @@
   <!-- Navbar -->
   <nav class="bg-[var(--primary)] text-white p-4 flex justify-between items-center shadow-lg border-b border-[var(--primary-light)]">
     <h1 class="text-xl font-bold tracking-wide">📚 Smart Classroom and Timetable Scheduler</h1>
-    <button onclick="showLogin()" class="bg-white text-[var(--primary)] px-4 py-2 rounded hover:bg-[var(--primary-bg)] transition-colors duration-300 font-medium shadow-sm">Logout</button>
+    <button id="logout-btn" onclick="showLogin()" class="hidden bg-white text-[var(--primary)] px-4 py-2 rounded hover:bg-[var(--primary-bg)] transition-colors duration-300 font-medium shadow-sm">Logout</button>
   </nav>
 
   <!-- Login Section -->
@@ -46,6 +46,9 @@
       <span class="mr-2">Login</span>
       <span class="transform transition-transform group-hover:translate-x-1">→</span>
     </button>
+      <div class="mt-3">
+        <button id="recover-admin-btn" onclick="createOrResetAdmin()" class="bg-yellow-500 text-white px-4 py-2 rounded shadow-sm hover:bg-yellow-600 w-64">Recover / Reset Admin</button>
+      </div>
   </section>
   <div id="notification" class="fixed top-4 right-4 bg-[var(--primary)] text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 hidden flex items-center border border-[var(--primary-light)]">
     <span class="mr-2">✨</span>
@@ -160,17 +163,12 @@
           <span>📨</span>
         </button>
       </div>
-    </div>
-    <!-- Assignments Section -->
-    <div id="assignments-section" class="bg-white rounded-xl shadow-md p-6 mb-8 hover:shadow-lg transition-shadow duration-300">
-      <h3 class="text-2xl font-bold mb-4 text-purple-600 flex items-center">
-        <span class="mr-2">📝</span>
-        Assignments
-      </h3>
-      <div id="assignments-container">
-        <!-- assignments.js will render UI here -->
+      <div class="flex gap-2 mt-3">
+        <button id="clear-chat-btn" onclick="clearChat()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Clear Chat</button>
+        <!-- Add Subject button moved to Subjects Management area per request -->
       </div>
     </div>
+    <!-- Assignments removed per configuration -->
 <!-- Poll / Voting System -->
 <div class="bg-white rounded-xl shadow-md p-6 mb-8 hover:shadow-lg transition-shadow duration-300">
   <h3 class="text-2xl font-bold mb-4 text-purple-600 flex items-center">
@@ -291,6 +289,9 @@
         <span class="mr-2">📅</span>
         Timetable Scheduler
       </h3>
+      <div class="flex justify-end mb-4">
+        <button id="reset-timetable-btn" onclick="resetTimetable()" class="hidden bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors duration-300">Reset Timetable</button>
+      </div>
       <div class="overflow-x-auto mb-4">
         <table id="timetable" class="table-auto border-collapse border border-purple-200 w-full">
           <thead class="bg-purple-100">
@@ -340,8 +341,9 @@
             <option>Thursday</option><option>Friday</option>
           </select>
           <div class="relative">
-            <input id="subject-input" type="text" placeholder="Subject" class="border p-2 pl-10 rounded-lg w-full focus:outline-none focus:border-purple-500">
-            <span class="absolute left-3 top-2.5 text-gray-400">📚</span>
+            <select id="subject-input" class="border p-2 pl-3 rounded-lg w-full focus:outline-none focus:border-purple-500">
+              <option value="">Select subject</option>
+            </select>
           </div>
           <button onclick="addClass()" class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors duration-300 flex items-center justify-center">
             <span class="mr-2">Add Class</span>
@@ -393,7 +395,7 @@
     </div>
 
     <!-- Smart Classroom Resources -->
-    <div class="bg-white rounded-xl shadow-md p-6 mb-8 hover:shadow-lg transition-shadow duration-300">
+    <div id="resources-section" class="bg-white rounded-xl shadow-md p-6 mb-8 hover:shadow-lg transition-shadow duration-300">
       <h3 class="text-2xl font-bold mb-4 text-purple-600 flex items-center">
         <span class="mr-2">🎯</span>
         Smart Classroom Resources
@@ -476,7 +478,7 @@
   <!-- Load utilities and feature scripts -->
   <script src="js/utils.js"></script>
   <script src="js/main.js"></script>
-  <script src="js/assignments.js"></script>
+  <!-- assignments feature removed; script omitted -->
   <script src="js/attendance.js"></script>
   <script src="js/admin.js"></script>
   <script src="js/calendar.js"></script>

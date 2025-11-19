@@ -139,7 +139,10 @@ function renderSubjects() {
         ` : ''}
         
         <div class="subjects-list">
-            <h4 class="font-bold mb-4 text-lg">All Subjects</h4>
+            <div class="flex items-center justify-between mb-4">
+                <h4 class="font-bold text-lg">All Subjects</h4>
+                ${isTeacherOrAdmin ? `<button onclick="focusAddSubject()" class="bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700 text-sm">Add Subject</button>` : ''}
+            </div>
             ${subjects.length === 0 ? `
                 <div class="text-center p-8 bg-purple-50 rounded-lg">
                     <p class="text-purple-600 mb-2">No subjects available yet</p>
@@ -237,6 +240,11 @@ function parseSubjectLine(line, index) {
             code = parts[1].toUpperCase();
             if (parts.length >= 3) semester = parts[2];
         }
+
+            // After rendering subjects, ensure timetable subject dropdown is updated
+            if (typeof window.populateTimetableSubjectOptions === 'function') {
+                try { window.populateTimetableSubjectOptions(); } catch (e) { console.warn('populateTimetableSubjectOptions error', e); }
+            }
     }
 
     // If still no code, auto-generate from name
@@ -323,3 +331,29 @@ document.addEventListener('DOMContentLoaded', () => {
         renderSubjects();
     }
 });
+
+// Focus the quick-add subject input and ensure the form is visible
+function focusAddSubject() {
+    try {
+        const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        if (!currentUser || (currentUser.type !== 'teacher' && currentUser.type !== 'admin')) {
+            showNotification('Only teachers and admins can add subjects', 'error');
+            return;
+        }
+
+        const subjectsSection = document.getElementById('subjects-section');
+        if (!subjectsSection) return;
+
+        // Scroll subjects section into view then focus the name input
+        subjectsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setTimeout(() => {
+            const nameInput = document.getElementById('subject-name');
+            if (nameInput) nameInput.focus();
+        }, 300);
+    } catch (e) {
+        console.error('focusAddSubject error', e);
+    }
+}
+
+// make available to inline handlers
+window.focusAddSubject = focusAddSubject;

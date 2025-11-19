@@ -107,6 +107,29 @@ function loadChatHistory() {
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
+// Clear chat history (teachers/admins only)
+function clearChat() {
+    try {
+        const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        if (!user || (user.type !== 'teacher' && user.type !== 'admin')) {
+            showNotification('Only teachers and admins can clear the chat', 'error');
+            return;
+        }
+
+        if (!confirm('Clear all chat history for this classroom? This cannot be undone.')) return;
+
+        localStorage.removeItem('chatHistory');
+        const chatBox = document.getElementById('chat-box');
+        if (chatBox) chatBox.innerHTML = '';
+        showNotification('Chat cleared');
+    } catch (e) {
+        console.error('clearChat error', e);
+        showNotification('Failed to clear chat', 'error');
+    }
+}
+
+// (openSubjectForm removed) Subjects area now provides its own Add Subject control
+
 // Resource Management
 function toggleResource(id) {
     const span = document.getElementById(id);
@@ -158,20 +181,54 @@ function setupDashboardByRole(userType) {
     const isTeacher = userType === 'teacher';
     const isStudent = userType === 'student';
 
-    // Handle timetable edit permissions
-    const timetableEditSection = document.querySelector('.bg-blue-50');
-    if (isStudent) {
-        timetableEditSection.classList.add('hidden');
+    // Handle timetable edit permissions: hide the timetable edit panel for students
+    try {
+        const timetableEditSection = document.getElementById('timetable-edit');
+        if (timetableEditSection) {
+            if (isStudent) timetableEditSection.style.display = 'none';
+            else timetableEditSection.style.display = '';
+        }
+    } catch (e) {
+        console.warn('timetable-edit toggle failed', e);
     }
 
-    // Handle attendance tracking
-    const attendanceSection = document.querySelector('.attendance-section');
-    if (attendanceSection) {
-        if (isTeacher) {
-            attendanceSection.classList.remove('hidden');
-        } else {
-            attendanceSection.classList.add('hidden');
+    // Handle attendance tracking: hide attendance section for students
+    try {
+        const attendanceSection = document.getElementById('attendance-section');
+        if (attendanceSection) {
+            if (isTeacher || userType === 'admin') attendanceSection.style.display = '';
+            else attendanceSection.style.display = 'none';
         }
+    } catch (e) {
+        console.warn('attendance-section toggle failed', e);
+    }
+
+    // Ensure any student-specific attendance view is removed for non-students
+    try {
+        const studentView = document.getElementById('student-attendance-view');
+        if (studentView && !isStudent) studentView.remove();
+    } catch (e) { /* ignore */ }
+
+    // Ensure the Add Student controls (attendance-controls) are hidden from students
+    try {
+        const attendanceControls = document.getElementById('attendance-controls');
+        if (attendanceControls) {
+            if (isStudent) attendanceControls.style.display = 'none';
+            else attendanceControls.style.display = '';
+        }
+    } catch (e) {
+        console.warn('Error toggling attendance-controls visibility', e);
+    }
+
+    // Ensure the poll creation UI is hidden for students
+    try {
+        const pollCreate = document.getElementById('poll-create');
+        if (pollCreate) {
+            if (isStudent) pollCreate.style.display = 'none';
+            else pollCreate.style.display = '';
+        }
+    } catch (e) {
+        console.warn('Error toggling poll-create visibility', e);
     }
 
     // Load appropriate content
@@ -181,6 +238,39 @@ function setupDashboardByRole(userType) {
     loadAnnouncements();
     if (isStudent) {
         loadStudentAttendance();
+    }
+
+    // Ensure student attendance view is visible for students (defensive)
+    try {
+        if (isStudent) {
+            const studentView = document.getElementById('student-attendance-view');
+            if (!studentView) {
+                // create it if missing
+                loadStudentAttendance();
+            } else {
+                studentView.style.display = '';
+            }
+        }
+    } catch (e) { console.warn('Ensuring student view visible failed', e); }
+
+    // Show/hide Smart Classroom Resources for teachers/admins only
+    try {
+        const resourcesSection = document.getElementById('resources-section');
+        const resetBtn = document.getElementById('reset-timetable-btn');
+        if (resourcesSection) {
+            if (isTeacher || userType === 'admin') {
+                resourcesSection.classList.remove('hidden');
+            } else {
+                resourcesSection.classList.add('hidden');
+            }
+        }
+
+        if (resetBtn) {
+            if (isTeacher || userType === 'admin') resetBtn.classList.remove('hidden');
+            else resetBtn.classList.add('hidden');
+        }
+    } catch (e) {
+        console.warn('Error toggling resources/reset button visibility', e);
     }
 }
 
@@ -216,7 +306,9 @@ function addClass() {
 
 // Student attendance view
 function loadStudentAttendance() {
-    const user = JSON.parse(localStorage.getItem('currentUser'));
+    const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    // Only show the student-specific attendance view for students
+    if (!user || user.type !== 'student') return;
     const attendanceData = JSON.parse(localStorage.getItem('attendanceData') || '{}');
     const userAttendance = attendanceData[user.username] || [];
     
@@ -238,10 +330,11 @@ function loadStudentAttendance() {
                 <ul id="attendance-list" class="list-disc ml-6"></ul>
             </div>
         `;
-        document.getElementById('dashboard-section').insertBefore(
-            attendanceView,
-            document.querySelector('.announcements-section')
-        );
+        // Append the student attendance view to the end of the dashboard
+        const dashboard = document.getElementById('dashboard-section');
+        if (dashboard) {
+            dashboard.appendChild(attendanceView);
+        }
     }
 
     // Update attendance statistics
@@ -315,3 +408,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setupDashboardByRole(user.type);
     }
 });
+
+// Expose certain functions to global scope for onclick handlers in HTML
+window.clearChat = clearChat;
+window.sendMessage = sendMessage;

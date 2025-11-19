@@ -195,8 +195,14 @@ function loadAttendanceSheet() {
     const subject = subjectSelect.value;
     const date = dateInput.value;
     
-    if (!subject || !date) {
-        showNotification('Please select both subject and date', 'error');
+    // If date is missing, default to today
+    if (!date) {
+        const today = new Date().toISOString().split('T')[0];
+        if (dateInput) dateInput.value = today;
+    }
+
+    if (!subject) {
+        showNotification('Please select a subject', 'error');
         return;
     }
 
@@ -270,6 +276,17 @@ function initAttendance() {
                 <option value="${s.code}">${s.name} (${s.code})</option>
             `).join('')}
         `;
+
+        // Auto-load attendance when subject is chosen
+        subjectSelect.addEventListener('change', () => {
+            // If date empty, set to today
+            const dateInput = document.getElementById('attendance-date');
+            if (dateInput && !dateInput.value) {
+                dateInput.value = new Date().toISOString().split('T')[0];
+            }
+            // Load the attendance sheet for the selected subject
+            try { loadAttendanceSheet(); } catch (e) { console.warn('loadAttendanceSheet error', e); }
+        });
     }
 
     // Initialize empty attendance sheet
